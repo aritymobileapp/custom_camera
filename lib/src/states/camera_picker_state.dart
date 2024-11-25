@@ -324,6 +324,8 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
     }
   }
 
+  String tips = '';
+
   /// Initialize cameras instances.
   /// 初始化相机实例
   Future<void> initCameras({
@@ -870,6 +872,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
   /// The picture will only taken when [CameraValue.isInitialized],
   /// and the camera is not taking pictures.
   /// 仅当初始化成功且相机未在拍照时拍照。
+  ///
   Future<void> takePicture() async {
     if (!controller.value.isInitialized) {
       handleErrorWithHandler(
@@ -903,20 +906,34 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
       //       handleErrorWithHandler(e, s, pickerConfig.onError);
       //     }),
       // ]);
-      final XFile file = await controller.takePicture();
+
+      if (pickerConfig.maxCaptureLimit != null) {
+        if (filePath.length < pickerConfig.maxCaptureLimit!) {
+          final XFile file = await controller.takePicture();
+          filePath.add(File(file.path));
+
+          log('Image Capture Path : ${file.path}');
+        } else {
+          tips = 'Select Maximum ${pickerConfig.maxCaptureLimit!} files';
+          safeSetState(() {});
+        }
+      } else {
+        final XFile file = await controller.takePicture();
+
+        filePath.add(File(file.path));
+
+        log('Image Capture Path : ${file.path}');
+      }
+
       // await controller.pausePreview();
-      final bool? isCapturedFileHandled = pickerConfig.onXFileCaptured?.call(
-        file,
-        CameraPickerViewType.image,
-      );
+      // final bool? isCapturedFileHandled = pickerConfig.onXFileCaptured?.call(
+      //   file,
+      //   CameraPickerViewType.image,
+      // );
 
       // if (isCapturedFileHandled ?? false) {
       //   return;
       // }
-
-      filePath.add(File(file.path));
-
-      log('Image Capture Path : ${file.path}');
 
       // final AssetEntity? entity = await pushToViewer(
       //   file: file,
@@ -987,40 +1004,83 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
 
   /// Set record file path and start recording.
   /// 设置拍摄文件路径并开始录制视频
+  ///
   Future<void> startRecordingVideo() async {
-    if (isControllerBusy) {
-      return;
-    }
-    isControllerBusy = true;
-    try {
-      await controller.startVideoRecording();
-      if (isRecordingRestricted) {
-        recordCountdownTimer = Timer(
-          pickerConfig.maximumRecordingDuration!,
-          stopRecordingVideo,
-        );
+    if (pickerConfig.maxCaptureLimit != null) {
+      if (filePath.length < pickerConfig.maxCaptureLimit!) {
+        if (isControllerBusy) {
+          return;
+        }
+        isControllerBusy = true;
+        try {
+          await controller.startVideoRecording();
+          if (isRecordingRestricted) {
+            recordCountdownTimer = Timer(
+              pickerConfig.maximumRecordingDuration!,
+              stopRecordingVideo,
+            );
+          }
+          recordStopwatch
+            ..reset()
+            ..start();
+        } catch (e, s) {
+          if (!controller.value.isRecordingVideo) {
+            handleErrorWithHandler(e, s, pickerConfig.onError);
+            return;
+          }
+          try {
+            await controller.stopVideoRecording();
+          } catch (e, s) {
+            recordCountdownTimer?.cancel();
+            isShootingButtonAnimate = false;
+            handleErrorWithHandler(e, s, pickerConfig.onError);
+          } finally {
+            recordStopwatch.stop();
+          }
+        } finally {
+          safeSetState(() {
+            isControllerBusy = false;
+          });
+        }
+      } else {
+        tips = 'Select Maximum ${pickerConfig.maxCaptureLimit!} files';
+        safeSetState(() {});
       }
-      recordStopwatch
-        ..reset()
-        ..start();
-    } catch (e, s) {
-      if (!controller.value.isRecordingVideo) {
-        handleErrorWithHandler(e, s, pickerConfig.onError);
+    } else {
+      if (isControllerBusy) {
         return;
       }
+      isControllerBusy = true;
       try {
-        await controller.stopVideoRecording();
+        await controller.startVideoRecording();
+        if (isRecordingRestricted) {
+          recordCountdownTimer = Timer(
+            pickerConfig.maximumRecordingDuration!,
+            stopRecordingVideo,
+          );
+        }
+        recordStopwatch
+          ..reset()
+          ..start();
       } catch (e, s) {
-        recordCountdownTimer?.cancel();
-        isShootingButtonAnimate = false;
-        handleErrorWithHandler(e, s, pickerConfig.onError);
+        if (!controller.value.isRecordingVideo) {
+          handleErrorWithHandler(e, s, pickerConfig.onError);
+          return;
+        }
+        try {
+          await controller.stopVideoRecording();
+        } catch (e, s) {
+          recordCountdownTimer?.cancel();
+          isShootingButtonAnimate = false;
+          handleErrorWithHandler(e, s, pickerConfig.onError);
+        } finally {
+          recordStopwatch.stop();
+        }
       } finally {
-        recordStopwatch.stop();
+        safeSetState(() {
+          isControllerBusy = false;
+        });
       }
-    } finally {
-      safeSetState(() {
-        isControllerBusy = false;
-      });
     }
   }
 
@@ -1234,8 +1294,14 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
             direction: isPortrait ? Axis.horizontal : Axis.vertical,
             children: <Widget>[
               if (!v.isRecordingVideo) backButton,
-              const Spacer(),
-              flashModeSwitch,
+              Expanded(child: flashModeSwitch),
+              if (controller != null && !controller.value.isRecordingVideo && cameras.length > 1)
+                RotatedBox(
+                  quarterTurns: !enableScaledPreview ? cameraQuarterTurns : 0,
+                  child: buildCameraSwitch(context),
+                )
+              else
+                const Spacer(),
             ],
           ),
         );
@@ -1291,26 +1357,27 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
   /// Text widget for shooting tips.
   /// 拍摄的提示文字
   Widget buildCaptureTips(CameraController? controller) {
-    final String tips;
-    if (pickerConfig.enableRecording) {
-      if (pickerConfig.onlyEnableRecording) {
-        if (pickerConfig.enableTapRecording) {
-          tips = textDelegate.shootingTapRecordingTips;
-        } else {
-          tips = textDelegate.shootingOnlyRecordingTips;
-        }
-      } else {
-        tips = textDelegate.shootingWithRecordingTips;
-      }
-    } else {
-      tips = textDelegate.shootingTips;
-    }
+    // final String tips;
+    // if (pickerConfig.enableRecording) {
+    //   if (pickerConfig.onlyEnableRecording) {
+    //     if (pickerConfig.enableTapRecording) {
+    //       tips = textDelegate.shootingTapRecordingTips;
+    //     } else {
+    //       tips = textDelegate.shootingOnlyRecordingTips;
+    //     }
+    //   } else {
+    //     tips = textDelegate.shootingWithRecordingTips;
+    //   }
+    // } else {
+    //   tips = textDelegate.shootingTips;
+    // }
     return AnimatedOpacity(
       duration: recordDetectDuration,
       opacity: controller?.value.isRecordingVideo ?? false ? 0 : 1,
       child: Container(
         height: 48.0,
         alignment: Alignment.center,
+        color: tips.isEmpty ? Colors.transparent : Colors.red.withOpacity(0.50),
         child: Text(
           tips,
           style: const TextStyle(fontSize: 15),
@@ -1374,38 +1441,68 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
         children: <Widget>[
           // const Spacer(),
 
-          filePath.length > 0
+          filePath.isNotEmpty
               ? Expanded(
                   child: Center(
                   child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Image.file(
-                        filePath.last,
-                        height: 60,
+                      Container(
+                        height: 70,
+                        width: 70,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          color: Colors.white.withOpacity(0.30),
+                        ),
+                        child: Image.file(filePath.last, fit: BoxFit.cover, errorBuilder: (
+                          BuildContext context,
+                          Object error,
+                          StackTrace? stackTrace,
+                        ) {
+                          return const Icon(
+                            Icons.play_arrow,
+                            size: 36,
+                          );
+                        }),
                       ),
                       Text(
                         "${filePath.length}",
-                        style: TextStyle(fontSize: 24),
+                        style: const TextStyle(fontSize: 20, color: Colors.white),
                       )
                     ],
                   ),
                 ))
-              : Spacer(),
+              : const Spacer(),
 
           Expanded(
             child: Center(
               child: buildCaptureButton(context, constraints),
             ),
           ),
-          if (controller != null && !controller.value.isRecordingVideo && cameras.length > 1)
-            Expanded(
-              child: RotatedBox(
-                quarterTurns: !enableScaledPreview ? cameraQuarterTurns : 0,
-                child: buildCameraSwitch(context),
-              ),
-            )
-          else
-            const Spacer(),
+
+          filePath.isNotEmpty
+              ? Expanded(
+                  child: Center(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context, filePath);
+                    },
+                    child: Container(
+                      height: 70,
+                      width: 70,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 1.5),
+                        color: Colors.white,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.blue,
+                        size: 42,
+                      ),
+                    ),
+                  ),
+                ))
+              : const Spacer(),
         ],
       ),
     );
@@ -1415,7 +1512,8 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
   /// 返回键
   Widget buildBackButton(BuildContext context) {
     return IconButton(
-      onPressed: () => Navigator.of(context).maybePop(),
+      // onPressed: () => Navigator.of(context).maybePop(),
+      onPressed: () => Navigator.pop(context, false),
       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       icon: const Icon(Icons.clear),
     );
@@ -1431,7 +1529,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
     return MergeSemantics(
       child: Semantics(
         label: textDelegate.sActionShootingButtonTooltip,
-        onTap: onTap,
+        // onTap: onTap,
         onTapHint: onTapHint,
         onLongPress: onLongPress,
         onLongPressHint: onLongPressHint,

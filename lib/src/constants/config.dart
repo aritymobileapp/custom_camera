@@ -15,37 +15,38 @@ import 'type_defs.dart';
 /// [CameraPicker] 的配置项
 /// {@endtemplate}
 final class CameraPickerConfig {
-  const CameraPickerConfig({
-    this.enableRecording = false,
-    this.onlyEnableRecording = false,
-    this.enableTapRecording = false,
-    this.enableAudio = true,
-    this.enableSetExposure = true,
-    this.enableExposureControlOnPoint = true,
-    this.enablePinchToZoom = true,
-    this.enablePullToZoomInRecord = true,
-    this.enableScaledPreview = false,
-    this.shouldDeletePreviewFile = false,
-    this.shouldAutoPreviewVideo = true,
-    this.maximumRecordingDuration = const Duration(seconds: 15),
-    this.minimumRecordingDuration = const Duration(seconds: 1),
-    this.theme,
-    this.textDelegate,
-    this.cameraQuarterTurns = 0,
-    this.resolutionPreset = ResolutionPreset.ultraHigh,
-    this.imageFormatGroup = ImageFormatGroup.unknown,
-    this.preferredLensDirection = CameraLensDirection.back,
-    this.preferredFlashMode = FlashMode.off,
-    this.lockCaptureOrientation,
-    this.foregroundBuilder,
-    this.previewTransformBuilder,
-    this.onEntitySaving,
-    this.onError,
-    this.onXFileCaptured,
-    this.onMinimumRecordDurationNotMet,
-    this.onPickConfirmed,
-    this.permissionRequestOption,
-  }) : assert(
+  const CameraPickerConfig(
+      {this.enableRecording = false,
+      this.onlyEnableRecording = false,
+      this.enableTapRecording = false,
+      this.enableAudio = true,
+      this.enableSetExposure = true,
+      this.enableExposureControlOnPoint = true,
+      this.enablePinchToZoom = true,
+      this.enablePullToZoomInRecord = true,
+      this.enableScaledPreview = false,
+      this.shouldDeletePreviewFile = false,
+      this.shouldAutoPreviewVideo = true,
+      this.maximumRecordingDuration = const Duration(seconds: 15),
+      this.minimumRecordingDuration = const Duration(seconds: 1),
+      this.theme,
+      this.textDelegate,
+      this.cameraQuarterTurns = 0,
+      this.resolutionPreset = ResolutionPreset.ultraHigh,
+      this.imageFormatGroup = ImageFormatGroup.unknown,
+      this.preferredLensDirection = CameraLensDirection.back,
+      this.preferredFlashMode = FlashMode.off,
+      this.lockCaptureOrientation,
+      this.foregroundBuilder,
+      this.previewTransformBuilder,
+      this.onEntitySaving,
+      this.onError,
+      this.onXFileCaptured,
+      this.onMinimumRecordDurationNotMet,
+      this.onPickConfirmed,
+      this.permissionRequestOption,
+      this.maxCaptureLimit})
+      : assert(
           enableRecording == true || onlyEnableRecording != true,
           'Recording mode error.',
         );
@@ -177,4 +178,7 @@ final class CameraPickerConfig {
   /// the `photo_manager` package.
   /// 使用 `photo_manager` 保存拍摄的文件的权限请求配置。
   final PermissionRequestOption? permissionRequestOption;
+
+  ///For Maximum Photo Capture;
+  final int? maxCaptureLimit;
 }

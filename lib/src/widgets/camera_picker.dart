@@ -12,8 +12,6 @@ import '../constants/config.dart';
 import '../internals/singleton.dart';
 import '../states/camera_picker_state.dart';
 
-import 'camera_picker_page_route.dart';
-
 /// The camera picker widget.
 /// 拍照选择器。
 ///
@@ -39,13 +37,12 @@ class CameraPicker extends StatefulWidget {
 
   /// Static method to create [AssetEntity] through camera.
   /// 通过相机创建 [AssetEntity] 的静态方法
-  static Future<AssetEntity?> pickFromCamera(
+  static Future<dynamic?> pickFromCamera(
     BuildContext context, {
     CameraPickerConfig pickerConfig = const CameraPickerConfig(),
     CameraPickerState Function()? createPickerState,
     bool useRootNavigator = true,
-    CameraPickerPageRoute<AssetEntity> Function(Widget picker)?
-        pageRouteBuilder,
+    // CameraPickerPageRoute<AssetEntity> Function(Widget picker)? pageRouteBuilder,
     Locale? locale,
   }) {
     final Widget picker = CameraPicker(
@@ -56,9 +53,8 @@ class CameraPicker extends StatefulWidget {
     return Navigator.of(
       context,
       rootNavigator: useRootNavigator,
-    ).push<AssetEntity>(
-      pageRouteBuilder?.call(picker) ??
-          CameraPickerPageRoute<AssetEntity>(builder: (_) => picker),
+    ).push(
+      MaterialPageRoute(builder: (_) => picker),
     );
   }
 
