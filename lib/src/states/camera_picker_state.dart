@@ -1161,7 +1161,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
         var targetPath = "$dirPath/${mediaInfo?.path?.split("/").last}";
         await File(mediaInfo!.path!).copy(targetPath);
 
-        filePath.add(File(file.path));
+        filePath.add(File(targetPath));
 
         var imagePath = File(mediaInfo!.path!);
         await imagePath.delete();
