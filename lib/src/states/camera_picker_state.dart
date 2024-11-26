@@ -1148,7 +1148,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
 
       MediaInfo? mediaInfo = await VideoCompress.compressVideo(
         file.path,
-        quality: VideoQuality.MediumQuality,
+        quality: pickerConfig.videoQuality,
         frameRate: 60,
         deleteOrigin: true, // It's false by default
       );

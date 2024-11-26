@@ -6,6 +6,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:video_compress/video_compress.dart';
 
 import '../delegates/camera_picker_text_delegate.dart';
 import 'type_defs.dart';
@@ -18,6 +19,7 @@ final class CameraPickerConfig {
   const CameraPickerConfig(
       {this.enableRecording = false,
       this.imageQuality = 50,
+      this.videoQuality = VideoQuality.MediumQuality,
       this.onlyEnableRecording = false,
       this.enableTapRecording = false,
       this.enableAudio = true,
@@ -184,4 +186,6 @@ final class CameraPickerConfig {
   final int? maxCaptureLimit;
 
   final int imageQuality;
+
+  final VideoQuality videoQuality;
 }

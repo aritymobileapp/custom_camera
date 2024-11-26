@@ -6,10 +6,12 @@ import 'dart:developer';
 
 import 'package:custom_camera/wechat_camera_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:video_compress/video_compress.dart';
 
 import '../extensions/l10n_extensions.dart';
 
 /// Provide common usages of the picker.
+///
 /// 提供常见的选择器调用方式。
 List<PickMethod> pickMethods(BuildContext context) {
   return <PickMethod>[
@@ -31,6 +33,7 @@ List<PickMethod> pickMethods(BuildContext context) {
             enableRecording: true,
             maxCaptureLimit: 5,
             imageQuality: 30,
+            videoQuality: VideoQuality.MediumQuality,
             maximumRecordingDuration: Duration(
               seconds: 150,
             ),
