@@ -915,7 +915,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
           final XFile file = await controller.takePicture();
           log('Image Capture Path : ${file.path}');
           final Directory extDir = await getApplicationCacheDirectory();
-          final String dirPath = '${extDir.path}/';
+          final String dirPath = extDir.path;
           await Directory(dirPath).create(recursive: true);
           final String targetPath = '$dirPath/${DateTime.now()}.webp';
 
@@ -942,7 +942,7 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
         log('Image Capture Path : ${file.path}');
 
         final Directory extDir = await getApplicationCacheDirectory();
-        final String dirPath = '${extDir.path}/';
+        final String dirPath = extDir.path;
         await Directory(dirPath).create(recursive: true);
         final String targetPath = '$dirPath/${DateTime.now()}.webp';
 
