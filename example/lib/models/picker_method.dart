@@ -28,8 +28,9 @@ List<PickMethod> pickMethods(BuildContext context) {
       method: (BuildContext context) => CameraPicker.pickFromCamera(
         context,
         pickerConfig: CameraPickerConfig(
-            enableRecording: false,
+            enableRecording: true,
             maxCaptureLimit: 5,
+            imageQuality: 30,
             maximumRecordingDuration: Duration(
               seconds: 150,
             ),

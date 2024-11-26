@@ -17,6 +17,7 @@ import 'type_defs.dart';
 final class CameraPickerConfig {
   const CameraPickerConfig(
       {this.enableRecording = false,
+      this.imageQuality = 50,
       this.onlyEnableRecording = false,
       this.enableTapRecording = false,
       this.enableAudio = true,
@@ -181,4 +182,6 @@ final class CameraPickerConfig {
 
   ///For Maximum Photo Capture;
   final int? maxCaptureLimit;
+
+  final int imageQuality;
 }

@@ -15,7 +15,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:wechat_picker_library/wechat_picker_library.dart';
 
 import '../constants/config.dart';
@@ -910,9 +913,25 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
       if (pickerConfig.maxCaptureLimit != null) {
         if (filePath.length < pickerConfig.maxCaptureLimit!) {
           final XFile file = await controller.takePicture();
-          filePath.add(File(file.path));
-
           log('Image Capture Path : ${file.path}');
+          final Directory extDir = await getApplicationCacheDirectory();
+          final String dirPath = '${extDir.path}/';
+          await Directory(dirPath).create(recursive: true);
+          final String targetPath = '$dirPath/${DateTime.now()}.webp';
+
+          var result = await FlutterImageCompress.compressAndGetFile(
+            file.path,
+            targetPath,
+            quality: pickerConfig.imageQuality,
+            format: CompressFormat.webp,
+          );
+
+          if (result != null) {
+            filePath.add(File(result.path));
+
+            var imagePath = File(file.path);
+            await imagePath.delete();
+          }
         } else {
           tips = 'Select Maximum ${pickerConfig.maxCaptureLimit!} files';
           safeSetState(() {});
@@ -920,9 +939,25 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
       } else {
         final XFile file = await controller.takePicture();
 
-        filePath.add(File(file.path));
-
         log('Image Capture Path : ${file.path}');
+
+        final Directory extDir = await getApplicationCacheDirectory();
+        final String dirPath = '${extDir.path}/';
+        await Directory(dirPath).create(recursive: true);
+        final String targetPath = '$dirPath/${DateTime.now()}.webp';
+
+        var result = await FlutterImageCompress.compressAndGetFile(
+          file.path,
+          targetPath,
+          quality: pickerConfig.imageQuality,
+          format: CompressFormat.webp,
+        );
+
+        if (result != null) {
+          filePath.add(File(file.path));
+          var imagePath = File(file.path);
+          await imagePath.delete();
+        }
       }
 
       // await controller.pausePreview();
@@ -1111,9 +1146,32 @@ class CameraPickerState extends State<CameraPicker> with WidgetsBindingObserver,
         return;
       }
 
-      setState(() {
+      MediaInfo? mediaInfo = await VideoCompress.compressVideo(
+        file.path,
+        quality: VideoQuality.MediumQuality,
+        frameRate: 60,
+        deleteOrigin: true, // It's false by default
+      );
+      log("MediaInfo : ${mediaInfo?.path}");
+      final Directory extDir = await getApplicationCacheDirectory();
+      final String dirPath = extDir.path;
+      await Directory(dirPath).create(recursive: true);
+
+      if (mediaInfo?.path != null) {
+        var targetPath = "$dirPath/${mediaInfo?.path?.split("/").last}";
+        await File(mediaInfo!.path!).copy(targetPath);
+
         filePath.add(File(file.path));
-      });
+
+        var imagePath = File(mediaInfo!.path!);
+        await imagePath.delete();
+      }
+
+      setState(() {});
+
+      // setState(() {
+      //   filePath.add(File(file.path));
+      // });
 
       // controller.pausePreview();
       // final bool? isCapturedFileHandled = pickerConfig.onXFileCaptured?.call(
