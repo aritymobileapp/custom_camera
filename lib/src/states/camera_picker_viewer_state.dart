@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:path/path.dart' as path;
 import 'package:video_player/video_player.dart';
+// import 'package:video_player/video_player.dart';
 import 'package:wechat_picker_library/wechat_picker_library.dart';
 
 import '../constants/config.dart';
@@ -125,7 +126,9 @@ class CameraPickerViewerState extends State<CameraPickerViewer> {
   /// [CameraPickerConfig.onEntitySaving] will reference the file, we don't want
   /// the file to be deleted in this case too.
   void deletePreviewFileIfConfigured() {
-    if (pickerConfig.shouldDeletePreviewFile && pickerConfig.onEntitySaving != null && previewFile.existsSync()) {
+    if (pickerConfig.shouldDeletePreviewFile &&
+        pickerConfig.onEntitySaving != null &&
+        previewFile.existsSync()) {
       previewFile.delete().catchError((e, s) {
         handleErrorWithHandler(e, s, onError);
         return previewFile;

@@ -970,7 +970,7 @@ class CameraPickerState extends State<CameraPicker>
         );
 
         if (result != null) {
-          filePath.add(File(file.path));
+          filePath.add(File(result.path));
           var imagePath = File(file.path);
           await imagePath.delete();
         }
